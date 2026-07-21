@@ -1,34 +1,4 @@
 <!DOCTYPE html>
-<!--
-  POW FOOD — TEAM WELLBEING SURVEY
-  ══════════════════════════════════
-  SETUP (one-time):
-  1. Create a new Google Sheet in your Google account
-  2. Extensions → Apps Script → paste the code below → Save
-
-    function doGet(e) {
-      const ss = SpreadsheetApp.getActiveSpreadsheet();
-      let sheet = ss.getSheetByName("Team Survey");
-      if (!sheet) sheet = ss.insertSheet("Team Survey");
-      const p = e.parameter;
-      if (sheet.getLastRow() === 0) {
-        sheet.appendRow([
-          "Timestamp","Q1 Management Support","Q2 Communication Clarity",
-          "Q3 Team Atmosphere","Q3 Varies Comment","Q4 Recognition",
-          "Q5 Confidence","Q6 Biggest Issues","Q7 Team Improvements","Q8 Support Needs"
-        ]);
-      }
-      sheet.appendRow([
-        new Date(), p.q1, p.q2, p.q3, p.q3c || "",
-        p.q4, p.q5, p.q6 || "", p.q7 || "", p.q8 || ""
-      ]);
-      return ContentService.createTextOutput("OK");
-    }
-
-  3. Deploy → New deployment → Web App
-     Execute as: Me | Who has access: Anyone
-  4. Copy the URL and replace YOUR_SCRIPT_URL_HERE below.
--->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -36,374 +6,193 @@
   <title>Team Wellbeing Survey</title>
   <style>
     :root {
-      --green:       #3B0010;
-      --green-mid:   #E8A020;
-      --green-light: #F9F0F2;
-      --green-soft:  #F0D8DC;
-      --bg:          #FFFDF7;
-      --white:       #FFFFFF;
-      --text:        #1A1A1A;
-      --muted:       #777;
-      --border:      #E0D8CC;
+      --maroon:  #3B0010;
+      --amber:   #E8A020;
+      --amber-d: #C17D0A;
+      --blush:   #F9F0F2;
+      --cream:   #FFFDF7;
+      --text:    #1A1A1A;
+      --muted:   #777;
+      --border:  #E0D8CC;
+      --white:   #FFFFFF;
     }
-
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { min-height: 100%; font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif; background: var(--cream); color: var(--text); }
 
-    html, body {
-      min-height: 100%;
-      font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-    }
+    .header { background: var(--maroon); padding: 20px 20px 16px; position: sticky; top: 0; z-index: 10; }
+    .header h1 { font-size: 17px; font-weight: 700; color: #fff; }
+    .anon-badge { display: inline-block; margin-top: 6px; background: rgba(255,255,255,0.18); color: rgba(255,255,255,0.9); font-size: 11px; padding: 3px 10px; border-radius: 20px; }
+    .progress-wrap { background: rgba(255,255,255,0.25); height: 4px; margin-top: 14px; border-radius: 2px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--amber); border-radius: 2px; transition: width 0.3s ease; }
 
-    /* ── Header ── */
-    .header {
-      background: var(--green);
-      padding: 20px 20px 16px;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-    .header h1 {
-      font-size: 17px;
-      font-weight: 700;
-      color: #fff;
-      letter-spacing: -0.01em;
-    }
-    .header .anon-badge {
-      display: inline-block;
-      margin-top: 6px;
-      background: rgba(255,255,255,0.18);
-      color: rgba(255,255,255,0.9);
-      font-size: 11px;
-      padding: 3px 10px;
-      border-radius: 20px;
-      letter-spacing: 0.02em;
-    }
-
-    /* ── Progress bar ── */
-    .progress-wrap {
-      background: rgba(255,255,255,0.25);
-      height: 4px;
-      margin-top: 14px;
-      border-radius: 2px;
-      overflow: hidden;
-    }
-    .progress-fill {
-      height: 100%;
-      background: #fff;
-      border-radius: 2px;
-      transition: width 0.3s ease;
-    }
-
-    /* ── Screens ── */
-    .screen { display: none; padding: 28px 20px 40px; }
+    .screen { display: none; padding: 28px 20px 48px; }
     .screen.active { display: block; }
 
-    .q-num {
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--green-mid);
-      letter-spacing: 0.08em;
-      margin-bottom: 8px;
-      text-transform: uppercase;
-    }
-    .q-text {
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--text);
-      line-height: 1.35;
-      margin-bottom: 8px;
-    }
-    .q-sub {
-      font-size: 13px;
-      color: var(--muted);
-      margin-bottom: 28px;
-      line-height: 1.4;
-    }
+    .q-num { font-size: 11px; font-weight: 700; color: var(--amber); letter-spacing: 0.08em; margin-bottom: 8px; text-transform: uppercase; }
+    .q-text { font-size: 19px; font-weight: 700; color: var(--text); line-height: 1.35; margin-bottom: 8px; }
+    .q-sub { font-size: 13px; color: var(--muted); margin-bottom: 28px; line-height: 1.4; }
 
-    /* ── Scale buttons ── */
-    .scale-row {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 12px;
-    }
+    .scale-row { display: flex; gap: 10px; margin-bottom: 12px; }
     .scale-btn {
-      flex: 1;
-      aspect-ratio: 1;
-      border: 2px solid var(--border);
-      border-radius: 14px;
-      background: var(--white);
-      font-size: 20px;
-      font-weight: 800;
-      color: var(--green);
-      cursor: pointer;
-      transition: all 0.15s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      flex: 1; aspect-ratio: 1; border: 2px solid var(--border); border-radius: 14px;
+      background: var(--white); font-size: 20px; font-weight: 800; color: var(--maroon);
+      cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center;
     }
-    .scale-btn:active, .scale-btn.selected {
-      background: var(--green);
-      border-color: var(--green);
-      color: var(--white);
-      transform: scale(0.96);
-    }
-    .scale-ends {
-      display: flex;
-      justify-content: space-between;
-      font-size: 11px;
-      color: var(--muted);
-      margin-bottom: 32px;
-    }
+    .scale-btn.selected { background: var(--maroon); border-color: var(--maroon); color: #fff; }
+    .scale-ends { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 32px; }
 
-    /* ── Option buttons ── */
     .option-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 32px; }
     .opt-btn {
-      width: 100%;
-      padding: 16px 18px;
-      border: 2px solid var(--border);
-      border-radius: 14px;
-      background: var(--white);
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--text);
-      cursor: pointer;
-      text-align: left;
-      line-height: 1.4;
-      transition: all 0.15s;
+      width: 100%; padding: 16px 18px; border: 2px solid var(--border); border-radius: 14px;
+      background: var(--white); font-size: 15px; font-weight: 600; color: var(--text);
+      cursor: pointer; text-align: left; line-height: 1.4; transition: all 0.15s;
     }
-    .opt-btn:active, .opt-btn.selected {
-      border-color: var(--green-mid);
-      background: var(--green-light);
-      color: var(--green);
-    }
+    .opt-btn.selected { border-color: var(--amber); background: var(--blush); color: var(--maroon); }
 
-    /* ── Textarea ── */
     textarea {
-      width: 100%;
-      padding: 14px 16px;
-      font-size: 15px;
-      border: 2px solid var(--border);
-      border-radius: 14px;
-      background: var(--white);
-      color: var(--text);
-      font-family: inherit;
-      line-height: 1.5;
-      resize: none;
-      outline: none;
-      transition: border-color 0.2s;
-      margin-bottom: 8px;
+      width: 100%; padding: 14px 16px; font-size: 15px; border: 2px solid var(--border);
+      border-radius: 14px; background: var(--white); color: var(--text); font-family: inherit;
+      line-height: 1.5; resize: none; outline: none; transition: border-color 0.2s; margin-bottom: 6px;
     }
-    textarea:focus { border-color: var(--green-mid); border-color: #E8A020; }
-    .optional-label { font-size: 12px; color: var(--muted); margin-bottom: 28px; }
+    textarea:focus { border-color: var(--amber); }
+    .field-note { font-size: 12px; color: var(--muted); margin-bottom: 28px; }
 
-    /* Conditional comment box */
     .conditional-box { display: none; margin-top: 14px; }
     .conditional-box.visible { display: block; }
-    .conditional-label {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--muted);
-      margin-bottom: 8px;
-    }
+    .conditional-label { font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
 
-    /* ── Navigation ── */
     .nav { display: flex; gap: 12px; }
-    .btn-back {
-      padding: 15px 24px;
-      border: 2px solid var(--border);
-      border-radius: 14px;
-      background: var(--white);
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--muted);
-      cursor: pointer;
-    }
-    .btn-next {
-      flex: 1;
-      padding: 15px;
-      border: none;
-      border-radius: 14px;
-      background: var(--green-mid);
-      font-size: 16px;
-      font-weight: 700;
-      color: #fff;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-    .btn-next:active { background: #C17D0A; }
-    .btn-next:disabled { opacity: 0.4; }
+    .btn-back { padding: 15px 22px; border: 2px solid var(--border); border-radius: 14px; background: var(--white); font-size: 15px; font-weight: 600; color: var(--muted); cursor: pointer; }
+    .btn-next { flex: 1; padding: 15px; border: none; border-radius: 14px; background: var(--amber); font-size: 16px; font-weight: 700; color: #fff; cursor: pointer; transition: background 0.15s; }
+    .btn-next:active { background: var(--amber-d); }
+    .btn-next:disabled { opacity: 0.35; }
 
-    /* ── Thank you ── */
-    #s-ty {
-      min-height: calc(100vh - 100px);
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 48px 28px;
-      text-align: center;
-    }
+    #s-ty { display: none; flex-direction: column; align-items: center; justify-content: center; min-height: calc(100vh - 100px); padding: 48px 28px; text-align: center; }
     #s-ty.active { display: flex; }
-    .check-circle {
-      width: 72px; height: 72px;
-      border-radius: 50%;
-      background: var(--green-light);
-      display: flex; align-items: center; justify-content: center;
-      margin-bottom: 24px;
-    }
-    .check-circle svg { width: 36px; height: 36px; }
-    .ty-title { font-size: 26px; font-weight: 800; color: var(--green); margin-bottom: 12px; }
+    .check-circle { width: 72px; height: 72px; border-radius: 50%; background: var(--blush); display: flex; align-items: center; justify-content: center; margin-bottom: 24px; }
+    .ty-title { font-size: 26px; font-weight: 800; color: var(--maroon); margin-bottom: 12px; }
     .ty-sub { font-size: 15px; color: var(--muted); line-height: 1.5; max-width: 280px; }
-    .q-num { color: #E8A020; }
   </style>
 </head>
 <body>
 
-<!-- ── Header ── -->
 <div class="header">
   <h1>POW Food — Team Survey</h1>
   <span class="anon-badge">Anonymous &amp; confidential</span>
-  <div class="progress-wrap">
-    <div class="progress-fill" id="progress" style="width:0%"></div>
-  </div>
+  <div class="progress-wrap"><div class="progress-fill" id="progress" style="width:0%"></div></div>
 </div>
 
-<!-- ── Q1: Management Support ── -->
+<!-- Q1 -->
 <div class="screen active" id="s1">
   <div class="q-num">Question 1 of 8</div>
   <div class="q-text">How supported do you feel by management during busy service periods?</div>
   <div class="q-sub">1 = not supported at all &nbsp;·&nbsp; 5 = very well supported</div>
   <div class="scale-row">
-    <button class="scale-btn" onclick="selectScale('q1',1,this)">1</button>
-    <button class="scale-btn" onclick="selectScale('q1',2,this)">2</button>
-    <button class="scale-btn" onclick="selectScale('q1',3,this)">3</button>
-    <button class="scale-btn" onclick="selectScale('q1',4,this)">4</button>
-    <button class="scale-btn" onclick="selectScale('q1',5,this)">5</button>
+    <button class="scale-btn" onclick="pickScale('q1',1,this)">1</button>
+    <button class="scale-btn" onclick="pickScale('q1',2,this)">2</button>
+    <button class="scale-btn" onclick="pickScale('q1',3,this)">3</button>
+    <button class="scale-btn" onclick="pickScale('q1',4,this)">4</button>
+    <button class="scale-btn" onclick="pickScale('q1',5,this)">5</button>
   </div>
   <div class="scale-ends"><span>Not supported</span><span>Very supported</span></div>
-  <div class="nav">
-    <button class="btn-next" id="next1" onclick="goStep(2)" disabled>Next →</button>
-  </div>
+  <div class="nav"><button class="btn-next" id="n1" disabled onclick="go(2)">Next →</button></div>
 </div>
 
-<!-- ── Q2: Communication ── -->
+<!-- Q2 -->
 <div class="screen" id="s2">
   <div class="q-num">Question 2 of 8</div>
   <div class="q-text">How clear is communication during your shifts?</div>
   <div class="q-sub">1 = often unclear &nbsp;·&nbsp; 5 = always clear</div>
   <div class="scale-row">
-    <button class="scale-btn" onclick="selectScale('q2',1,this)">1</button>
-    <button class="scale-btn" onclick="selectScale('q2',2,this)">2</button>
-    <button class="scale-btn" onclick="selectScale('q2',3,this)">3</button>
-    <button class="scale-btn" onclick="selectScale('q2',4,this)">4</button>
-    <button class="scale-btn" onclick="selectScale('q2',5,this)">5</button>
+    <button class="scale-btn" onclick="pickScale('q2',1,this)">1</button>
+    <button class="scale-btn" onclick="pickScale('q2',2,this)">2</button>
+    <button class="scale-btn" onclick="pickScale('q2',3,this)">3</button>
+    <button class="scale-btn" onclick="pickScale('q2',4,this)">4</button>
+    <button class="scale-btn" onclick="pickScale('q2',5,this)">5</button>
   </div>
   <div class="scale-ends"><span>Often unclear</span><span>Always clear</span></div>
-  <div class="nav">
-    <button class="btn-back" onclick="goStep(1)">← Back</button>
-    <button class="btn-next" id="next2" onclick="goStep(3)" disabled>Next →</button>
-  </div>
+  <div class="nav"><button class="btn-back" onclick="go(1)">← Back</button><button class="btn-next" id="n2" disabled onclick="go(3)">Next →</button></div>
 </div>
 
-<!-- ── Q3: Team Atmosphere ── -->
+<!-- Q3 -->
 <div class="screen" id="s3">
   <div class="q-num">Question 3 of 8</div>
   <div class="q-text">How would you describe the team atmosphere most days?</div>
   <div class="q-sub">Tap to select</div>
   <div class="option-group">
-    <button class="opt-btn" onclick="selectOpt('q3','Positive and collaborative',this,false)">Positive and collaborative</button>
-    <button class="opt-btn" onclick="selectOpt('q3','Generally good with occasional tension',this,false)">Generally good with occasional tension</button>
-    <button class="opt-btn" onclick="selectOpt('q3','Tense more often than not',this,false)">Tense more often than not</button>
-    <button class="opt-btn" onclick="selectOpt('q3','It varies a lot depending on the day',this,true)">It varies a lot depending on the day</button>
+    <button class="opt-btn" onclick="pickOpt('q3','Positive and collaborative',this,false)">Positive and collaborative</button>
+    <button class="opt-btn" onclick="pickOpt('q3','Generally good with occasional tension',this,false)">Generally good with occasional tension</button>
+    <button class="opt-btn" onclick="pickOpt('q3','Tense more often than not',this,false)">Tense more often than not</button>
+    <button class="opt-btn" onclick="pickOpt('q3','It varies a lot depending on the day',this,true)">It varies a lot depending on the day</button>
   </div>
-  <div class="conditional-box" id="q3-comment">
+  <div class="conditional-box" id="q3box">
     <div class="conditional-label">Can you tell us a bit more?</div>
-    <textarea id="inp-q3c" rows="3" placeholder="e.g. Better on quieter days, harder during busy service…"></textarea>
+    <textarea id="q3c" rows="3" placeholder="e.g. Better on quieter days, harder during busy service…"></textarea>
   </div>
-  <div class="nav">
-    <button class="btn-back" onclick="goStep(2)">← Back</button>
-    <button class="btn-next" id="next3" onclick="goStep(4)" disabled>Next →</button>
-  </div>
+  <div class="nav"><button class="btn-back" onclick="go(2)">← Back</button><button class="btn-next" id="n3" disabled onclick="go(4)">Next →</button></div>
 </div>
 
-<!-- ── Q4: Recognition ── -->
+<!-- Q4 -->
 <div class="screen" id="s4">
   <div class="q-num">Question 4 of 8</div>
   <div class="q-text">Do you feel your work and skills are recognised?</div>
   <div class="q-sub">Tap to select</div>
   <div class="option-group">
-    <button class="opt-btn" onclick="selectOpt('q4','Yes, consistently',this,false)">Yes, consistently</button>
-    <button class="opt-btn" onclick="selectOpt('q4','Sometimes',this,false)">Sometimes</button>
-    <button class="opt-btn" onclick="selectOpt('q4','Rarely',this,false)">Rarely</button>
-    <button class="opt-btn" onclick="selectOpt('q4','No',this,false)">No</button>
+    <button class="opt-btn" onclick="pickOpt('q4','Yes, consistently',this,false)">Yes, consistently</button>
+    <button class="opt-btn" onclick="pickOpt('q4','Sometimes',this,false)">Sometimes</button>
+    <button class="opt-btn" onclick="pickOpt('q4','Rarely',this,false)">Rarely</button>
+    <button class="opt-btn" onclick="pickOpt('q4','No',this,false)">No</button>
   </div>
-  <div class="nav">
-    <button class="btn-back" onclick="goStep(3)">← Back</button>
-    <button class="btn-next" id="next4" onclick="goStep(5)" disabled>Next →</button>
-  </div>
+  <div class="nav"><button class="btn-back" onclick="go(3)">← Back</button><button class="btn-next" id="n4" disabled onclick="go(5)">Next →</button></div>
 </div>
 
-<!-- ── Q5: Confidence ── -->
+<!-- Q5 -->
 <div class="screen" id="s5">
   <div class="q-num">Question 5 of 8</div>
   <div class="q-text">How confident do you feel in your role day to day?</div>
   <div class="q-sub">1 = not confident at all &nbsp;·&nbsp; 5 = very confident</div>
   <div class="scale-row">
-    <button class="scale-btn" onclick="selectScale('q5',1,this)">1</button>
-    <button class="scale-btn" onclick="selectScale('q5',2,this)">2</button>
-    <button class="scale-btn" onclick="selectScale('q5',3,this)">3</button>
-    <button class="scale-btn" onclick="selectScale('q5',4,this)">4</button>
-    <button class="scale-btn" onclick="selectScale('q5',5,this)">5</button>
+    <button class="scale-btn" onclick="pickScale('q5',1,this)">1</button>
+    <button class="scale-btn" onclick="pickScale('q5',2,this)">2</button>
+    <button class="scale-btn" onclick="pickScale('q5',3,this)">3</button>
+    <button class="scale-btn" onclick="pickScale('q5',4,this)">4</button>
+    <button class="scale-btn" onclick="pickScale('q5',5,this)">5</button>
   </div>
   <div class="scale-ends"><span>Not confident</span><span>Very confident</span></div>
-  <div class="nav">
-    <button class="btn-back" onclick="goStep(4)">← Back</button>
-    <button class="btn-next" id="next5" onclick="goStep(6)" disabled>Next →</button>
-  </div>
+  <div class="nav"><button class="btn-back" onclick="go(4)">← Back</button><button class="btn-next" id="n5" disabled onclick="go(6)">Next →</button></div>
 </div>
 
-<!-- ── Q6: Biggest issues ── -->
+<!-- Q6 -->
 <div class="screen" id="s6">
   <div class="q-num">Question 6 of 8</div>
   <div class="q-text">What are your biggest issues or struggles at work at the moment?</div>
   <div class="q-sub">Take your time — this is the most important question</div>
-  <textarea id="inp-q6" rows="5" placeholder="Write as much or as little as you like…" oninput="checkText('q6','next6')"></textarea>
-  <div class="optional-label">Required</div>
-  <div class="nav">
-    <button class="btn-back" onclick="goStep(5)">← Back</button>
-    <button class="btn-next" id="next6" onclick="goStep(7)" disabled>Next →</button>
-  </div>
+  <textarea id="q6" rows="5" placeholder="Write as much or as little as you like…" oninput="checkReq('q6','n6')"></textarea>
+  <div class="field-note">Required</div>
+  <div class="nav"><button class="btn-back" onclick="go(5)">← Back</button><button class="btn-next" id="n6" disabled onclick="go(7)">Next →</button></div>
 </div>
 
-<!-- ── Q7: Team improvements ── -->
+<!-- Q7 -->
 <div class="screen" id="s7">
   <div class="q-num">Question 7 of 8</div>
   <div class="q-text">Is there anything about how the team works together that you think could be improved?</div>
   <div class="q-sub">Optional — skip if you prefer</div>
-  <textarea id="inp-q7" rows="5" placeholder="Any thoughts on team dynamics, communication, working relationships…"></textarea>
-  <div class="optional-label">Optional</div>
-  <div class="nav">
-    <button class="btn-back" onclick="goStep(6)">← Back</button>
-    <button class="btn-next" onclick="goStep(8)">Next →</button>
-  </div>
+  <textarea id="q7" rows="5" placeholder="Any thoughts on team dynamics, communication, working relationships…"></textarea>
+  <div class="field-note">Optional</div>
+  <div class="nav"><button class="btn-back" onclick="go(6)">← Back</button><button class="btn-next" onclick="go(8)">Next →</button></div>
 </div>
 
-<!-- ── Q8: Support needs ── -->
+<!-- Q8 -->
 <div class="screen" id="s8">
   <div class="q-num">Question 8 of 8</div>
   <div class="q-text">What would help you feel more supported at work?</div>
   <div class="q-sub">Optional — skip if you prefer</div>
-  <textarea id="inp-q8" rows="5" placeholder="e.g. clearer instructions, more feedback, more hands-on support during service…"></textarea>
-  <div class="optional-label">Optional</div>
-  <div class="nav">
-    <button class="btn-back" onclick="goStep(7)">← Back</button>
-    <button class="btn-next" onclick="submitSurvey()">Submit ✓</button>
-  </div>
+  <textarea id="q8" rows="5" placeholder="e.g. clearer instructions, more feedback, more hands-on support during service…"></textarea>
+  <div class="field-note">Optional</div>
+  <div class="nav"><button class="btn-back" onclick="go(7)">← Back</button><button class="btn-next" onclick="submit()">Submit ✓</button></div>
 </div>
 
-<!-- ── Thank you ── -->
+<!-- Thank you -->
 <div id="s-ty">
   <div class="check-circle">
     <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -415,78 +204,74 @@
 </div>
 
 <script>
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyNLht_iLamGfeC9FKR4dqW3wROOveVCZ6ijMVIGxe9VySNuA7ixsWMfzKknTJnl9bKyg/exec';
+  const URL = 'https://script.google.com/macros/s/AKfycbyNLht_iLamGfeC9FKR4dqW3wROOveVCZ6ijMVIGxe9VySNuA7ixsWMfzKknTJnl9bKyg/exec';
+  const ans = { q1:'', q2:'', q3:'', q3c:'', q4:'', q5:'' };
 
-  const data = { q1:'', q2:'', q3:'', q3c:'', q4:'', q5:'' };
-  const TOTAL = 8;
-  let currentStep = 1;
-
-  function updateProgress(step) {
-    const pct = Math.round(((step - 1) / TOTAL) * 100);
-    document.getElementById('progress').style.width = pct + '%';
-  }
-
-  function goStep(n) {
+  function go(n) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById('s' + n).classList.add('active');
+    const el = document.getElementById('s'+n);
+    if (el) el.classList.add('active');
     document.getElementById('s-ty').classList.remove('active');
-    currentStep = n;
-    updateProgress(n);
-    window.scrollTo(0, 0);
+    const pct = Math.round(((n-1)/8)*100);
+    document.getElementById('progress').style.width = pct + '%';
+    window.scrollTo(0,0);
   }
 
-  function selectScale(field, value, btn) {
-    // Clear siblings
+  function pickScale(field, val, btn) {
     btn.closest('.scale-row').querySelectorAll('.scale-btn').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
-    data[field] = value;
-    // Enable next
-    const nextBtn = document.getElementById('next' + currentStep);
-    if (nextBtn) nextBtn.disabled = false;
+    ans[field] = String(val);
+    const nextId = btn.closest('.screen').querySelector('.btn-next[id]');
+    if (nextId) nextId.disabled = false;
   }
 
-  function selectOpt(field, value, btn, showComment) {
+  function pickOpt(field, val, btn, showExtra) {
     btn.closest('.option-group').querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
-    data[field] = value;
-    // Handle conditional comment box for Q3
+    ans[field] = val;
     if (field === 'q3') {
-      const box = document.getElementById('q3-comment');
-      if (showComment) {
-        box.classList.add('visible');
-      } else {
-        box.classList.remove('visible');
-        data.q3c = '';
-      }
+      const box = document.getElementById('q3box');
+      showExtra ? box.classList.add('visible') : box.classList.remove('visible');
+      if (!showExtra) ans.q3c = '';
     }
-    const nextBtn = document.getElementById('next' + currentStep);
-    if (nextBtn) nextBtn.disabled = false;
+    const nextId = btn.closest('.screen').querySelector('.btn-next[id]');
+    if (nextId) nextId.disabled = false;
   }
 
-  function checkText(field, nextId) {
-    const val = document.getElementById('inp-' + field).value.trim();
-    const btn = document.getElementById(nextId);
-    if (btn) btn.disabled = val.length === 0;
+  function checkReq(fieldId, btnId) {
+    const val = document.getElementById(fieldId).value.trim();
+    document.getElementById(btnId).disabled = val.length === 0;
   }
 
-  function submitSurvey() {
-    data.q3c   = (document.getElementById('inp-q3c')  || {value:''}).value.trim();
-    const q6   = document.getElementById('inp-q6').value.trim();
-    const q7   = (document.getElementById('inp-q7') || {value:''}).value.trim();
-    const q8   = (document.getElementById('inp-q8') || {value:''}).value.trim();
+  function submit() {
+    ans.q3c = document.getElementById('q3c').value.trim();
+    const q6 = document.getElementById('q6').value.trim();
+    const q7 = document.getElementById('q7').value.trim();
+    const q8 = document.getElementById('q8').value.trim();
 
-    const params = new URLSearchParams({
-      ...data, q6, q7, q8
-    }).toString();
+    const src = URL
+      + '?q1='  + encodeURIComponent(ans.q1)
+      + '&q2='  + encodeURIComponent(ans.q2)
+      + '&q3='  + encodeURIComponent(ans.q3)
+      + '&q3c=' + encodeURIComponent(ans.q3c)
+      + '&q4='  + encodeURIComponent(ans.q4)
+      + '&q5='  + encodeURIComponent(ans.q5)
+      + '&q6='  + encodeURIComponent(q6)
+      + '&q7='  + encodeURIComponent(q7)
+      + '&q8='  + encodeURIComponent(q8)
+      + '&t='   + Date.now();
 
-    const img = new Image();
-    img.src = `${SCRIPT_URL}?${params}&t=${Date.now()}`;
+    // Image() — works cross-origin on all browsers
+    new Image().src = src;
+
+    // fetch fallback
+    fetch(src, { mode: 'no-cors', keepalive: true }).catch(function(){});
 
     // Show thank you
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById('s-ty').classList.add('active');
-    updateProgress(TOTAL + 1);
-    window.scrollTo(0, 0);
+    document.getElementById('progress').style.width = '100%';
+    window.scrollTo(0,0);
   }
 </script>
 </body>
