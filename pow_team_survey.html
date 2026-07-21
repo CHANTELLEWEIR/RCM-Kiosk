@@ -261,9 +261,6 @@
       + '&q8='  + encodeURIComponent(q8)
       + '&t='   + Date.now();
 
-    // Image() — works cross-origin on all browsers
-    new Image().src = src;
-
     // fetch fallback
     fetch(src, { mode: 'no-cors', keepalive: true }).catch(function(){});
 
